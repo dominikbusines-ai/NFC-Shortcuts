@@ -1,0 +1,62 @@
+
+name: Apple Shortcut signieren
+
+on:
+  workflow_dispatch:
+
+jobs:
+  sign:
+    runs-on: macos-latest
+
+    steps:
+      - name: Test-Kurzbefehl erstellen
+        run: |
+          cat > Test.shortcut <<'EOF'
+          <?xml version="1.0" encoding="UTF-8"?>
+          <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN"
+          "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+          <plist version="1.0">
+          <dict>
+            <key>WFWorkflowClientVersion</key>
+            <string>2607.0.3</string>
+            <key>WFWorkflowMinimumClientVersion</key>
+            <integer>900</integer>
+            <key>WFWorkflowMinimumClientVersionString</key>
+            <string>900</string>
+            <key>WFWorkflowIcon</key>
+            <dict>
+              <key>WFWorkflowIconGlyphNumber</key>
+              <integer>59511</integer>
+              <key>WFWorkflowIconStartColor</key>
+              <integer>463140863</integer>
+            </dict>
+            <key>WFWorkflowActions</key>
+            <array>
+              <dict>
+                <key>WFWorkflowActionIdentifier</key>
+                <string>is.workflow.actions.gettext</string>
+                <key>WFWorkflowActionParameters</key>
+                <dict>
+                  <key>WFTextActionText</key>
+                  <string>NFC-Test erfolgreich</string>
+                </dict>
+              </dict>
+            </array>
+          </dict>
+          </plist>
+          EOF
+          plutil -lint Test.shortcut
+
+      - name: Apple-Signierung testen
+        run: |
+          shortcuts sign \
+            --mode anyone \
+            --input Test.shortcut \
+            --output Test-signiert.shortcut
+
+      - name: Ergebnis bereitstellen
+        uses: actions/upload-artifact@v4
+        with:
+          name: Signierter-Kurzbefehl
+          path: Test-signiert.shortcut
+          if-no-files-found: error
